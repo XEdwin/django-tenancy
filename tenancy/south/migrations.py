@@ -18,7 +18,8 @@ class TenantMigrationMixin(object):
     def tenant_step(self, orm, operation):
         default_schema_name = db.default_schema_name
         deferred_sql = db.deferred_sql
-        for tenant in get_tenant_model()._default_manager.all():
+        tenants = get_tenant_model()._default_manager
+        for tenant in tenants.all():
             # Set the default schema name to the tenant one in order to
             # allow constraints retreival.
             db.default_schema_name = tenant.db_schema
@@ -42,6 +43,8 @@ class TenantMigrationMixin(object):
 
             # Set back the default db shema
             db.default_schema_name = default_schema_name
+        # Make sure tenant models are not shared between migrations
+        tenants.clear_cache()
 
     def forwards(self, orm):
         self.tenant_step(orm, self.tenant_forwards)
