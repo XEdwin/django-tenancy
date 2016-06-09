@@ -8,7 +8,7 @@ from contextlib import contextmanager
 
 import django
 from django.core.exceptions import ImproperlyConfigured
-from django.db import connection, models
+from django.db import connection, models, transaction
 from django.db.models.base import ModelBase, subclass_exception
 from django.db.models.deletion import DO_NOTHING
 from django.db.models.fields import Field
@@ -89,14 +89,16 @@ class AbstractTenant(models.Model):
 
     def save(self, *args, **kwargs):
         created = not self.pk
-        save = super(AbstractTenant, self).save(*args, **kwargs)
-        if created:
-            create_tenant_schema(self)
+        with transaction.atomic():
+            save = super(AbstractTenant, self).save(*args, **kwargs)
+            if created:
+                create_tenant_schema(self)
         return save
 
     def delete(self, *args, **kwargs):
-        delete = super(AbstractTenant, self).delete(*args, **kwargs)
-        drop_tenant_schema(self)
+        with transaction.atomic():
+            delete = super(AbstractTenant, self).delete(*args, **kwargs)
+            drop_tenant_schema(self)
         return delete
 
     def natural_key(self):
