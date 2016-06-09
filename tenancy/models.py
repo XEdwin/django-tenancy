@@ -97,8 +97,8 @@ class AbstractTenant(models.Model):
 
     def delete(self, *args, **kwargs):
         with transaction.atomic():
-            delete = super(AbstractTenant, self).delete(*args, **kwargs)
             drop_tenant_schema(self)
+            delete = super(AbstractTenant, self).delete(*args, **kwargs)
         return delete
 
     def natural_key(self):
